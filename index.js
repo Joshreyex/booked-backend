@@ -1,25 +1,19 @@
-const express = require('express');
-const cors = require('cors');
-const admin = require('firebase-admin');
+// Before anything else, load dotenv:
 require('dotenv').config();
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const admin = require('firebase-admin');
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
+// Build a service account object from env vars
+const serviceAccount = {
+  project_id: process.env.FIREBASE_PROJECT_ID,
+  client_email: process.env.FIREBASE_CLIENT_EMAIL,
+  // Replace literal "\n" sequences with actual newlines:
+  private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+};
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
+// Now you can call Firestore:
 const db = admin.firestore();
-
-app.get('/test', (req, res) => {
-  res.send('🔥 BookedSuite Backend is Live!');
-});
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
-});
