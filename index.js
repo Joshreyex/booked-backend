@@ -29,25 +29,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get('/meta-webhook', (req, res) => {
-  const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN;
-
-  const mode = req.query['hub.mode'];
-  const token = req.query['hub.verify_token'];
-  const challenge = req.query['hub.challenge'];
-
-  if (mode && token) {
-    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-      console.log('WEBHOOK_VERIFIED');
-      res.status(200).send(challenge);
-    } else {
-      res.sendStatus(403);
-    }
-  } else {
-    res.sendStatus(400);
-  }
-});
-
 // ---- Helpers
 function resolveChromeExecutablePath() {
   if (process.env.PUPPETEER_EXECUTABLE_PATH && fs.existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
@@ -862,54 +843,7 @@ Notes: "${icpNotes || "n/a"}". Tone: ${tone}. Persona: ${persona}.
   }
 });
 // ---------------------------------------------------------------------
-// META WEBHOOK — Verification + IG/FB Message Handler
-// ---------------------------------------------------------------------
-const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN || "volryx_secret_token";
-
-app.get("/webhook", (req, res) => {
-  const mode = req.query["hub.mode"];
-  const token = req.query["hub.verify_token"];
-  const challenge = req.query["hub.challenge"];
-
-  if (mode && token) {
-    if (mode === "subscribe" && token === VERIFY_TOKEN) {
-      console.log("✅ META Webhook verified");
-      return res.status(200).send(challenge);
-    } else {
-      return res.sendStatus(403);
-    }
-  }
-});
-
-// ✅ META WEBHOOK VERIFICATION (GET)
-app.get("/webhook", (req, res) => {
-  const VERIFY_TOKEN = "volryx_secret_token"; // You can move this to process.env later
-
-  const mode = req.query["hub.mode"];
-  const token = req.query["hub.verify_token"];
-  const challenge = req.query["hub.challenge"];
-
-  if (mode && token) {
-    if (mode === "subscribe" && token === VERIFY_TOKEN) {
-      console.log("✅ WEBHOOK VERIFIED");
-      return res.status(200).send(challenge);
-    } else {
-      return res.sendStatus(403);
-    }
-  }
-
-  res.sendStatus(400);
-});
-
-// ✅ META WEBHOOK HANDLER (POST)
-app.post("/webhook", (req, res) => {
-  console.log("📩 Webhook received:", JSON.stringify(req.body, null, 2));
-  res.sendStatus(200);
-});
-
-// other routes and middleware above...
-
-// 👉 Insert here
+// ✅ META WEBHOOK VERIFICATION
 app.get('/meta-webhook', (req, res) => {
   const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN;
 
@@ -920,11 +854,19 @@ app.get('/meta-webhook', (req, res) => {
   if (mode && token) {
     if (mode === 'subscribe' && token === VERIFY_TOKEN) {
       console.log('✅ WEBHOOK_VERIFIED');
-      res.status(200).send(challenge);
+      return res.status(200).send(challenge);
     } else {
-      res.sendStatus(403);
+      return res.sendStatus(403); // Forbidden
     }
+  } else {
+    return res.sendStatus(400); // Bad request
   }
+});
+
+// ✅ META WEBHOOK EVENT HANDLER (POST)
+app.post('/meta-webhook', (req, res) => {
+  console.log('📥 Webhook event received:', JSON.stringify(req.body, null, 2));
+  res.sendStatus(200);
 });
 
 
